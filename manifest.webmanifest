@@ -1,6 +1,6 @@
 {
   "name": "Student Data Hub",
-  "short_name": "Student Hub",
+  "short_name": "KV RMT Student Data Hub",
   "description": "Find student details from UBI, Samagam and UDISE sheets",
   "start_url": "./",
   "scope": "./",
