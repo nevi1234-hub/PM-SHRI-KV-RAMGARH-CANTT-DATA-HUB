@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1d1b4a">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Student Finder">
+<title>Student Data Hub</title>
+<style>
+*{box-sizing:border-box}
+:root{--ink:#1d1b4a;--ubi:#6a1b9a;--sam:#d500a8;--udi:#8d4b1f;--c:#6a1b9a;--bg:#f4f3ff}
+body{margin:0;font-family:Verdana,Geneva,sans-serif;font-size:18px;background:var(--bg);color:var(--ink)}
+header{background:var(--ink);padding:30px 18px 100px;text-align:center}
+h1{margin:0;font-size:clamp(28px,6vw,46px);line-height:1.25}
+h1 .a{color:#ff8ae2}h1 .b{color:#d1a3ff}h1 .c{color:#ffc08a}
+.sub{margin:10px 0 0;font-size:18px;color:#c9c6f5}
+main{max-width:1100px;margin:-74px auto 48px;padding:0 14px}
+.panel{background:#fff;border-radius:18px;padding:22px;border-top:8px solid var(--c);box-shadow:0 12px 32px rgba(29,27,74,.2)}
+.row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:16px;margin-bottom:20px}
+@media(max-width:760px){.row{grid-template-columns:1fr}}
+.k{display:block;font-weight:bold;font-size:17px;margin-bottom:6px}
+input,select,textarea{width:100%;font:inherit;font-size:20px;color:var(--ink);padding:12px 14px;border:2px solid #cfcdf0;border-radius:10px;background:#fff}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:3px solid #ffb300;outline-offset:2px}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.src{font:inherit;font-size:22px;font-weight:bold;padding:14px 6px;border-radius:12px;cursor:pointer;background:#fff;border:3px solid var(--k);color:var(--k)}
+.src[aria-pressed=true]{background:var(--k);color:#fff}
+.go{font:inherit;font-size:22px;font-weight:bold;padding:14px 30px;border:0;border-radius:12px;background:#ff8f00;color:#fff;cursor:pointer}
+.clr{font:inherit;font-size:20px;padding:12px 22px;border:2px solid var(--ink);border-radius:12px;background:#fff;color:var(--ink);cursor:pointer;margin-left:10px}
+#msg{font-size:19px;font-weight:bold;margin:16px 0 0;min-height:1.4em;color:#6d4c41}#msg.err{color:#c62828}
+#pick{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+#pick button{font:inherit;font-size:17px;padding:8px 14px;border-radius:999px;border:2px solid var(--c);background:#fff;color:var(--c);cursor:pointer}
+#pick button[aria-pressed=true]{background:var(--c);color:#fff}
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:18px 20px;margin-top:26px}
+.f label{display:block;font-weight:bold;font-size:17px;margin-bottom:5px}
+.f textarea{resize:none;border-left:6px solid var(--c);background:#faf9ff;font-weight:bold;overflow:hidden;color:#5d2e0c}
+</style>
+</head>
+<body>
+<header>
+  <h1><span class="a">Student</span> <span class="b">Data</span> <span class="c">Hub</span></h1>
+  <p class="sub" id="school"></p>
+</header>
+<main>
+<form class="panel" id="panel" autocomplete="off">
+  <div class="tabs" role="group" aria-label="Choose data source">
+    <button type="button" class="src" data-s="UBI" style="--k:#6a1b9a">UBI</button>
+    <button type="button" class="src" data-s="Samagam" style="--k:#d500a8">Samagam</button>
+    <button type="button" class="src" data-s="UDISE" style="--k:#8d4b1f">UDISE</button>
+  </div>
+  <div class="row">
+    <div><label class="k" for="name" style="color:#8d4b1f">Student name</label><input id="name" placeholder="Type name or part of it"></div>
+    <div><label class="k" for="cls" style="color:#6a1b9a">Class</label><select id="cls"></select></div>
+    <div><label class="k" for="sec" style="color:#d500a8">Section</label><select id="sec"></select></div>
+    <div><label class="k" for="pin" style="color:#a3195b">Access PIN</label><input id="pin" type="password" inputmode="numeric"></div>
+  </div>
+  <button class="go" type="submit">Fetch data</button><button class="clr" type="button" id="clr">Clear</button>
+  <p id="msg" role="status" aria-live="polite"></p>
+  <div id="pick"></div>
+  <div id="grid"></div>
+</form>
+</main>
+<script>
+/* ====== EDIT THESE TWO LINES ====== */
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxcC1eG6wiLgJXtb_QoCPTwavOpB9cZbhnHwllkg3izqiGSoD4_ISqR-eBPbBqYKVja/exec";
+const SCHOOL_NAME = "PM SHRI Kendriya Vidyalaya Ramgarh Cantt.";
+/* ================================== */
+const HEADS = {"UBI": ["SL NO", "Student Code", "Admission Year", "Admn No", "Student Name", "", "Class", "Section", "Fathers Name", "Mothers Name", "Gender", "Date Of Birth", "Admn Category", "Category", "Minority", "Mobile No", "Email ID", "Blood Group", "Aadhar Card No", "Student Status", "TC Issued", "Admission Flag", "Verified at First Level", "Verified at Second Level", "BPL", "Physically Disabled", "Project / Non Project", "Sibbling", "Single Girl Child", "RTE", "KVS Ward", "Chairman Fee", "Emergency Assistance", "Court Case", "ART 123-124", "CWI 1", "CWI 2", "Reimbursement Claimed", "Tuition Fee Exemption", "VVN Fee Exemption", "Comp Fund Exemption", "Comp Sci Fee Exemption", "Project Fee Exemption", "Tuition Fee", "VVN Fee", "Computer Fund", "Computer Science Fee", "Library Fee", "Project Fee", "SF Other", "VVN Other", "Total Quarterly Fee"], "Samagam": ["Sn", "Academic Session", "RO Name", "RO ID", "School Name", "KV ID", "Class", "Section", "Stream", "Roll No", "CBSE Roll No", "Student ID", "UUID", "UBI ID", "Admission No", "Student Code", "First Name", "Middle Name", "Last Name", "Full Name", "DOB", "Gender", "Blood Group", "Email", "Mobile", "Aadhaar", "PEN No", "APAAR No", "Admission Ground", "Admission Category", "Parent Service Category", "Social Category", "Minority Group", "Mother Tongue", "CWSN", "BPL", "RTE", "SGC", "KVS Ward", "Nationality", "Father Name", "Father Mobile", "Mother Name", "Mother Mobile", "Guardian Name", "Guardian Mobile", "Guardian Relation", "Current Address 1", "Current Address 2", "Current Address 3", "Current City", "Current District ID", "Current State ID", "Current PIN", "Permanent Address 1", "Permanent Address 2", "Permanent Address 3", "Permanent City", "Permanent District ID", "Permanent State ID", "Permanent PIN", "Status", "Inactive Reason", "TC Issued", "Upgraded", "Upgrade Requested", "Upgrade Verified", "Profile Requested", "Profile Verified", "Update Basic", "Update Guardian", "Update Address", "Update First KV", "Update Present KV", "Update Current Academic", "Update Previous Academic", "Update Photo", "Created At", "Updated At"], "UDISE": ["SL NO", "Class", "Section", "Name", "Gender", "Initialised at SDMS", "Student PEN", "Student State Code", "Father Name", "Mother Name", "Social Category", "Minority Group", "BPL beneficiary", "CWSN", "Type of Impairments", "Is Repeater", "Suspected Duplicate", "Entry Status", "AADHAAR No.", "Name As per AADHAAR", "AADHAAR Validation Status", "MBU Status", "APAAR ID", "APAAR Status"]};
+const SRC = {UBI:"#6a1b9a", Samagam:"#d500a8", UDISE:"#8d4b1f"};
+const NAMECOL = {UBI:"Student Name", Samagam:"Full Name", UDISE:"Name"};
+const COLORS = ["#d500a8","#8d4b1f","#6a1b9a","#a3195b","#6d4c41","#8e24aa"];
+const $ = id => document.getElementById(id);
+let src = "UBI", heads = [], rows = [];
+
+$("school").textContent = SCHOOL_NAME;
+$("cls").innerHTML = '<option value="">Select</option><option value="BV3">Balvatika 3</option>' +
+  ["I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII"].map((r,i)=>`<option value="${i+1}">Class ${r}</option>`).join("");
+$("sec").innerHTML = '<option value="">Select</option>' + "ABCD".split("").map(s=>`<option>${s}</option>`).join("");
+try { $("pin").value = sessionStorage.getItem("pin") || ""; } catch(e){}
+
+function msg(t, err){ $("msg").textContent = t; $("msg").className = err ? "err" : ""; }
+
+function draw(hs, vals){
+  const g = $("grid"); g.innerHTML = "";
+  hs.forEach((h,i)=>{
+    if(!h) return;
+    const v = vals ? String(vals[i] ?? "") : "";
+    const d = document.createElement("div"); d.className = "f";
+    const l = document.createElement("label"); l.htmlFor = "f"+i; l.textContent = h; l.style.color = COLORS[i%COLORS.length];
+    const t = document.createElement("textarea"); t.id = "f"+i; t.readOnly = true; t.value = v;
+    t.rows = Math.min(4, Math.max(1, Math.ceil(v.length/24)));
+    d.append(l,t); g.append(d);
+  });
+}
+
+function show(n){
+  draw(heads, rows[n]);
+  $("pick").querySelectorAll("button").forEach((b,i)=>b.setAttribute("aria-pressed", i===n));
+}
+
+function setSrc(s){
+  src = s; heads = HEADS[s]; rows = [];
+  document.querySelectorAll(".src").forEach(b=>b.setAttribute("aria-pressed", b.dataset.s===s));
+  $("panel").style.setProperty("--c", SRC[s]);
+  $("pick").innerHTML = ""; msg(""); draw(heads, null);
+}
+
+document.querySelectorAll(".src").forEach(b=>b.onclick = ()=>setSrc(b.dataset.s));
+$("clr").onclick = ()=>{ $("name").value=""; $("cls").value=""; $("sec").value=""; setSrc(src); };
+
+$("panel").onsubmit = async ev => {
+  ev.preventDefault();
+  if(WEB_APP_URL.startsWith("PASTE")) return msg("Add your Web App URL at the top of the script in index.html.", 1);
+  if(!$("cls").value || !$("sec").value) return msg("Choose a class and a section.", 1);
+  try { sessionStorage.setItem("pin", $("pin").value); } catch(e){}
+  msg("Fetching data...");
+  const q = new URLSearchParams({sheet:src, cls:$("cls").value, sec:$("sec").value, name:$("name").value.trim(), pin:$("pin").value});
+  try{
+    const d = await (await fetch(WEB_APP_URL + "?" + q)).json();
+    if(!d.ok) return msg(d.error, 1);
+    if(!d.rows.length){ $("pick").innerHTML=""; draw(HEADS[src], null); return msg("No student found in "+src+" for this name, class and section.", 1); }
+    heads = d.heads; rows = d.rows;
+    const ni = heads.indexOf(NAMECOL[src]);
+    $("pick").innerHTML = "";
+    rows.forEach((r,i)=>{ const b = document.createElement("button"); b.type="button"; b.textContent = r[ni] || ("Student "+(i+1)); b.onclick = ()=>show(i); $("pick").append(b); });
+    show(0);
+    msg(rows.length + (rows.length===1 ? " student found." : " students found. Tap a name to switch.") + (d.more ? " Showing the first "+rows.length+"." : ""));
+  }catch(e){ msg("Could not reach the sheet. Check the Web App URL and that access is set to Anyone.", 1); }
+};
+
+setSrc("UBI");
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+</script>
+</body>
+</html>
